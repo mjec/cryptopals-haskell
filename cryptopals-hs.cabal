@@ -1,8 +1,8 @@
 name:                cryptopals-hs
 version:             0.1.0.0
-synopsis:            Initial project template from stack
+synopsis:            Matasano crypto challenges solutions in Haskell
 description:         Please see README.md
-homepage:            http://github.com/mjec/cryptopals-hs#readme
+homepage:            http://github.com/mjec/cryptopals-haskell#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Michael Cordover
@@ -48,4 +48,4 @@ test-suite cryptopals-hs-test
 
 source-repository head
   type:     git
-  location: https://github.com/mjec/cryptopals-hs
+  location: https://github.com/mjec/cryptopals-haskell
