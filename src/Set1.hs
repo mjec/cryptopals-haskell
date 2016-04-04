@@ -1,7 +1,8 @@
 module Set1
-    ( challenge1 -- , challenge1_test
-    , challenge2 -- , challenge2_test
-    , challenge3 -- , challenge3_test
+    ( challenge1
+    , challenge2
+    , challenge3
+    , challenge4
     ) where
 
 import Lib
@@ -43,6 +44,7 @@ challenge2 _ = Left ("You need to supply two hex strings to xor together", ["1-2
 challenge3 :: [String] -> Either Error String
 challenge3 (x:y:[])
     | not $ all (`elem` ['0'..'9']) y = Left ("The number of results to show must be a positive integer", ["1-3"], True)
+    | not $ yInt > 0 = Left ("The number of results to show must be a positive integer", ["1-3"], True)
     | isHex x = Right $ hex_string_to_guesses x yInt
     | otherwise = Left ("Your hex string must be actual hex i.e. [A-Za-z0-9]+ and the number to show must be a positive integer", ["1-3"], True)
     where yInt = read y::Int
@@ -58,7 +60,7 @@ hex_string_to_guesses x y = unlines $ take y $ list_of_best_guesses probabilitie
 
 hex_string_to_best_guess :: String -> String
 hex_string_to_best_guess x = bytes_to_string $ best_guess bs
-    where best_guess = single_byte_xor $ best_guess_single_byte_xor probabilities
+    where best_guess = single_byte_xor $ fst $ minimumBy (\(_, x) (_, y) -> compare x y) probabilities
           probabilities = single_byte_xor_probabilities bs
           bs = hex_to_bytes x
 
@@ -79,12 +81,6 @@ list_of_best_guesses l bs =
           deltaof (_, x, _) = x
           plainof (_, _, x) = x
 
-best_guess_single_byte_xor :: [(Word8, Float)] -> Word8
-best_guess_single_byte_xor l = fst $ Map.foldWithKey map_min (0x00::Word8, 100) $ Map.fromList l
-    where map_min k v cur
-                | v < snd cur = (k, v)
-                | otherwise   = cur
-
 single_byte_xor_probabilities :: B.ByteString -> [(Word8, Float)]
 single_byte_xor_probabilities str =
         [ (x, y)
@@ -97,12 +93,10 @@ single_byte_xor_probabilities str =
 
 
 -- Challenge 4
--- challenge4 :: [String] -> IO ()
--- challenge4 (x:[])
---     | isHex x = do putStrLn $ hex_string_to_best_guess x
---     | otherwise = usage_failure $ unlines
---         [ "That is not a valid way to run 1-3 (maybe ask for help?)"
---         , "Your hex string must be actual hex i.e. [A-Za-z0-9]+"]
--- challenge4 _ = usage_failure $ unlines
---     [ "That is not a valid way to run 1-4 (maybe ask for help?)"
---     , "You need to supply a filename"]
+challenge4 :: [String] -> Either Error String
+challenge4 inputLines
+    | null inputLines = Left ("You need to supply hex strings to standard input i.e. [A-Za-z0-9]+ and only one per line", ["1-4"], True)
+    | all isHex inputLines = Right $ bytes_to_string $ single_byte_xor (fst $ snd absolute_best) (fst absolute_best)
+    | otherwise = Left ("You need to supply hex strings to standard input i.e. [A-Za-z0-9]+ and only one per line", ["1-4"], True)
+    where absolute_best = minimumBy (\(_, (_, x)) (_, (_, y)) -> compare x y) [(hex_to_bytes x, best_guess x) | x <- inputLines]
+          best_guess = (minimumBy (\(_, x) (_, y) -> compare x y)) . single_byte_xor_probabilities . hex_to_bytes

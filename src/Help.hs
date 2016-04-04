@@ -21,6 +21,7 @@ help_dispatch :: [(String, [String] -> Either (String, [String], Bool) String)]
 help_dispatch = [ ("1-1", s1c1_help)
                 , ("1-2", s1c2_help)
                 , ("1-3", s1c3_help)
+                , ("1-4", s1c4_help)
                 ]
 
 s1c1_help :: [String] -> Either (String, [String], Bool) String
@@ -55,11 +56,9 @@ s1c3_help _ = Right $ unlines
 
 s1c4_help :: [String] -> Either (String, [String], Bool) String
 s1c4_help _ = Right $ unlines
-        [ "Usage: cryptopals 1-4 filename"
+        [ "Usage: cryptopals 1-4 < file"
         , ""
-        , "Takes a file with one string per line and figures out which line"
-        , "has been 'encrypted' with a single-byte xor. Returns one line"
-        , "with three colon separated fields. The first field is the xor"
-        , "key (in hex). The second field is the line number. The third"
-        , "field is the plain text."
+        , "Takes hex strings on standard input (one string per line) and figures"
+        , "out which line has been 'encrypted' with a single-byte xor. Returns"
+        , "one line with the plain text."
         ]

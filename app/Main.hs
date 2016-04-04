@@ -18,7 +18,7 @@ dispatch = [ ("help", return_help)
            , ("1-1", S1.challenge1)
            , ("1-2", S1.challenge2)
            , ("1-3", S1.challenge3)
-           -- , ("1-4", S1.challenge4)
+           , ("1-4", S1.challenge4)
            -- , ("1-5", S1.challenge5)
            -- , ("1-6", S1.challenge6)
            -- , ("1-7", S1.challenge7)
@@ -28,7 +28,7 @@ dispatch = [ ("help", return_help)
 -- The function takes arguments and (lines getContents) and returns what should
 -- be passed to the dispatch function.
 needs_stdin :: [(String, [String] -> [String] -> [String])]
-needs_stdin = [ ("1-4", \_ stdin -> stdin)
+needs_stdin = [ ("1-4", \_ stdin -> filter (\l -> not $ null l) stdin)
               ]
 
 parse_args :: String -> [String] -> IO ()
