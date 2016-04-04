@@ -62,19 +62,27 @@ isHex x = all (`elem` ['A'..'F'] ++ ['a'..'f'] ++ ['0'..'9']) x
 bitwiseCombine :: (Word8 -> Word8 -> Word8) -> B.ByteString -> B.ByteString -> B.ByteString
 bitwiseCombine f x y = B.pack $ B.zipWith (\x y -> (x `f` y)) x y
 
-buildFreqTable :: [Word8] -> B.ByteString -> (Float, Map.Map Word8 Float)
 -- The map that is returned is (k, v) with one k for each needle (first [Word8])
 -- so v will be 0 for those not found. Otherwise v is the proportion of k occurring
 -- in the subset of haystack which contains only the needles.
 -- The Float that is returned is the proportion of the total length of the haystack
 -- which is Word8s not in the needles.
-buildFreqTable needles haystack =
-        ( genericLength not_in_needles / genericLength hs  -- haystack characters not in needles
-        , Map.union the_table $ Map.fromList $ zip needles $ repeat (0::Float)) -- populate with 0s where required
-    where hs = B.unpack haystack  -- convert ByteString -> [Word8]
-          (in_needles, not_in_needles) = partition (`elem` needles) hs  -- partition on whether contained or not
-          table_gen n the_list = Map.fromListWith (\x _ -> x + (1 / n)) the_list  -- we add 1/n for each occurrance
-          the_table = table_gen (genericLength in_needles) $ zip hs $ repeat (0::Float)
+buildFreqTable :: [Word8] -> B.ByteString -> (Float, Map.Map Word8 Float)
+buildFreqTable needles haystack = buidFreqTableRecursive startingMap 0 0 haystack
+        where startingMap = Map.fromList [(n, 0) | n <- needles]
+
+buidFreqTableRecursive :: Map.Map Word8 Float -> Float -> Float -> B.ByteString -> (Float, Map.Map Word8 Float)
+buidFreqTableRecursive accumulatorMap inCount totalCount bytesToAdd
+    | isNull    = (0, accumulatorMap)
+    | isEmpty   = ((totalCount - inCount) / totalCount, Map.map (\v -> v / inCount) accumulatorMap)
+    | isIn      = let newmap = Map.adjust (\v -> v + 1) hd accumulatorMap
+                  in  buidFreqTableRecursive newmap (inCount + 1) (totalCount + 1) tl
+    | otherwise = buidFreqTableRecursive accumulatorMap inCount (totalCount + 1) tl
+    where hd = B.head bytesToAdd
+          tl = B.tail bytesToAdd
+          isIn = Map.member hd accumulatorMap
+          isEmpty = B.null bytesToAdd
+          isNull = isEmpty && (totalCount == 0)
 
 charToWord8 :: Char -> Word8
 charToWord8 = B.head . TxtEnc.encodeUtf8 . Txt.singleton
