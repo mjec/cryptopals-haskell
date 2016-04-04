@@ -83,7 +83,7 @@ word8ToChar :: Word8 -> Char
 word8ToChar = head . Txt.unpack . TxtEnc.decodeUtf8 . B.singleton
 
 bytes_to_string :: B.ByteString -> String
-bytes_to_string = Txt.unpack . TxtEnc.decodeUtf8With (\err wrd -> Just '�')
+bytes_to_string = Txt.unpack . TxtEnc.decodeUtf8With (\_ _ -> Just '�')
 
 freqTableDelta :: Map.Map Word8 Float -> Map.Map Word8 Float -> Float
 freqTableDelta x y = sum $ Map.elems $ freqTableDifference x y
