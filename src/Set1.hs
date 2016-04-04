@@ -18,7 +18,7 @@ import Data.Bits
 import Data.List
 
 -- Challenge 1
-challenge1 :: [String] -> Either (String, [String], Bool) String
+challenge1 :: [String] -> Either Error String
 challenge1 (x:[])
     | isHex x = Right $ (hex_to_base64 x) ++ "\n"
     | otherwise = Left ("Your hex string must be actual hex i.e. [A-Za-z0-9]+", ["1-1"], True)
@@ -32,7 +32,7 @@ hex_to_base64 = bytes_to_base64 . hex_to_bytes
 
 
 -- Challenge 2
-challenge2 :: [String] -> Either (String, [String], Bool) String
+challenge2 :: [String] -> Either Error String
 challenge2 (x:y:[])
     | isHex (x ++ y) = Right $ bytes_to_hex (bitwiseCombine xor (hex_to_bytes x) (hex_to_bytes y)) ++ "\n"
     | otherwise = Left ("Your hex strings must be actual hex i.e. [A-Za-z0-9]+", ["1-2"], True)
@@ -40,7 +40,7 @@ challenge2 _ = Left ("You need to supply two hex strings to xor together", ["1-2
 
 
 -- Challenge 3
-challenge3 :: [String] -> Either (String, [String], Bool) String
+challenge3 :: [String] -> Either Error String
 challenge3 (x:y:[])
     | not $ all (`elem` ['0'..'9']) y = Left ("The number of results to show must be a positive integer", ["1-3"], True)
     | isHex x = Right $ hex_string_to_guesses x yInt

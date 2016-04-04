@@ -3,6 +3,7 @@
 module Main where
 
 import Help
+import Lib (Error)
 
 import qualified Set1 as S1
 
@@ -12,19 +13,7 @@ import System.Exit
 
 
 -- Dispatcher
--- Functions to which we dispatch have this signature:
---    [String] -> Either  (String, [String], Bool)  String
---      ^                     ^        ^       ^      ^-- what to print
---      |                     |        |       |
---      |                     |        |       --- show usage
---      |                     |        |
---      |                     |        --- arguments for help
---      |                     |
---      |                     --- error message
---      |
---      --- command line arguments
---
-dispatch :: [(String, ([String] -> Either (String, [String], Bool) String))]
+dispatch :: [(String, ([String] -> Either Error String))]
 dispatch = [ ("help", return_help)
            , ("1-1", S1.challenge1)
            , ("1-2", S1.challenge2)
@@ -46,8 +35,8 @@ parse_args :: String -> [String] -> IO ()
 parse_args _ []       = putStr $ always_return_help []
 parse_args input (cmd:args) = case cmdFunc
                               of Right s -> putStr s
-                                 Left (err, hargs, True) -> usage_and_exit err hargs
                                  Left (err, _, False) -> error_and_exit err
+                                 Left (err, hargs, True) -> usage_and_exit err hargs
       where cmdFunc = case lookup cmd dispatch
                       of Just action -> case lookup cmd needs_stdin
                                         of Nothing    -> action args
