@@ -1,23 +1,30 @@
 module Lib
     (
-     Error
+    -- Types
+      Error
+    , UTF8String
+    , UTF8Char
+
       -- Base64
-    , base64_to_bytes
-    , bytes_to_base64
+    , base64ToBytes
+    , bytesToBase64
 
       -- Base16
-    , hex_to_bytes
-    , bytes_to_hex
+    , hexToBytes
+    , bytesToHex
     , isHex
 
       -- ByteString helper functions
     , bitwiseCombine
-    , bytes_to_string
+    , bytesToString
     , buildFreqTable
-    , freqTableDifference
+--    , freqTableDifference
+    , buildDelta
     , freqTableDelta
     , word8ToChar
     , charToWord8
+    , stringToBytes
+    , plusNL
 
       -- Data
     , englishFreqTable
@@ -25,84 +32,113 @@ module Lib
     , asciiFreqTableNoNL
     ) where
 
-import qualified Data.ByteString.Lazy as B
+import           Control.Arrow
+import           Data.Bits
 import qualified Data.ByteString.Base16.Lazy as B16
 import qualified Data.ByteString.Base64.Lazy as B64
-import qualified Data.Text.Lazy as Txt
-import qualified Data.Text.Lazy.Encoding as TxtEnc
-import qualified Data.Map as Map
-import Data.Bits
-import Data.Word
-import Data.List
+import qualified Data.ByteString.Lazy        as B
+import           Data.List
+import qualified Data.Map                    as Map
+import qualified Data.Text.Lazy              as Txt
+import qualified Data.Text.Lazy.Encoding     as TxtEnc
+import           Data.Word
 
 -- Error
 -- (error message, arguments for return_help, and whether to show usage)
-type Error = (String, [String], Bool)
+type Error = (String, [B.ByteString], Bool)
+type UTF8String = String
+type UTF8Char = Char
 
 -- Base64 functions
-base64_to_bytes :: String -> B.ByteString
-base64_to_bytes  = B64.decodeLenient . TxtEnc.encodeUtf8 . Txt.pack
+base64ToBytes :: B.ByteString -> B.ByteString
+base64ToBytes  = B64.decodeLenient
 
-bytes_to_base64 :: B.ByteString -> String
-bytes_to_base64 = Txt.unpack . TxtEnc.decodeUtf8 . B64.encode
+bytesToBase64 :: B.ByteString -> B.ByteString
+bytesToBase64 = B64.encode
 
 
 -- Base16 (hex) functions
-hex_to_bytes :: String -> B.ByteString
-hex_to_bytes = fst . B16.decode . TxtEnc.encodeUtf8 . Txt.pack
+hexToBytes :: B.ByteString -> B.ByteString
+-- hexToBytes hex
+--         | hex == B.empty = B.empty
+--         | otherwise = B.append (B.singleton $ hx (head firstTwo, head (tail firstTwo))) (hexToBytes $ B.drop 2 hex)
+--     where firstTwo = B.unpack $ B.take 2 hex
+--           hx h     = case Map.lookup h hexToBytesTable
+--                      of Just x -> x
+--                         _      -> 0::Word8
+hexToBytes = fst . B16.decode
 
-bytes_to_hex :: B.ByteString -> String
-bytes_to_hex = Txt.unpack . TxtEnc.decodeUtf8 . B16.encode
+bytesToHex :: B.ByteString -> B.ByteString
+bytesToHex = B16.encode
 
-isHex :: String -> Bool
-isHex x = all (`elem` ['A'..'F'] ++ ['a'..'f'] ++ ['0'..'9']) x
+isHex :: B.ByteString -> Bool
+isHex x = all (`elem` map charToWord8 (['A'..'F'] ++ ['a'..'f'] ++ ['0'..'9'])) $ B.unpack x
 
 
 -- ByteString helper functions
 bitwiseCombine :: (Word8 -> Word8 -> Word8) -> B.ByteString -> B.ByteString -> B.ByteString
-bitwiseCombine f x y = B.pack $ B.zipWith (\x y -> (x `f` y)) x y
+bitwiseCombine f x y = B.pack $ B.zipWith f x y
+
+
+buildDelta :: Int -> Map.Map Word8 Double -> B.ByteString -> Double
+buildDelta totalCount startingMap haystack = Map.fold (\x y -> abs x + y) 0 $ B.foldl (flip (Map.adjust (\a -> a - (1/realToFrac totalCount)))) startingMap haystack
+-- buildFreqTable startingValue haystack = (realToFrac (totalCount - inCount) / realToFrac totalCount, freqMap) -- {-# SCC "build-normalize-map" #-} Map.map (/realToFrac inCount) freqMap)
+--         where (inCount, totalCount, freqMap) = {-# SCC "build-perform-fold" #-} B.foldl' buidFreqTableFold startingValue haystack
+-- buildDelta startingMap haystack = Map.fold (+) 0 $ B.foldl (\x -> Map.adjust (-1/realToFrac totalCount) x) startingMap haystack
+-- buildDelta totalCount startingMap haystack = Map.fold (\x y -> {-# SCC "buildDelta-fold-lambda" #-}x + y) 0 $ B.foldl' (flip (Map.adjust (\a -> {-# SCC "buildDelta-adjust-lambda" #-} abs $ a - (1/realToFrac totalCount)))) startingMap haystack
+--    where totalCount = B.length haystack
 
 -- The map that is returned is (k, v) with one k for each needle (first [Word8])
 -- so v will be 0 for those not found. Otherwise v is the proportion of k occurring
 -- in the subset of haystack which contains only the needles.
--- The Float that is returned is the proportion of the total length of the haystack
+-- The Double that is returned is the proportion of the total length of the haystack
 -- which is Word8s not in the needles.
-buildFreqTable :: [Word8] -> B.ByteString -> (Float, Map.Map Word8 Float)
-buildFreqTable needles haystack = buidFreqTableRecursive startingMap 0 0 haystack
-        where startingMap = Map.fromList [(n, 0) | n <- needles]
+buildFreqTable :: (Int, Int, Map.Map Word8 Double) -> B.ByteString -> (Double, Map.Map Word8 Double)
+buildFreqTable startingValue haystack = (realToFrac (totalCount - inCount) / realToFrac totalCount, freqMap)
+        where (inCount, totalCount, freqMap) = B.foldl' buidFreqTableFold startingValue haystack
 
-buidFreqTableRecursive :: Map.Map Word8 Float -> Float -> Float -> B.ByteString -> (Float, Map.Map Word8 Float)
-buidFreqTableRecursive accumulatorMap inCount totalCount bytesToAdd
-    | isNull    = (0, accumulatorMap)
-    | isEmpty   = ((totalCount - inCount) / totalCount, Map.map (\v -> v / inCount) accumulatorMap)
-    | isIn      = let newmap = Map.adjust (\v -> v + 1) hd accumulatorMap
-                  in  buidFreqTableRecursive newmap (inCount + 1) (totalCount + 1) tl
-    | otherwise = buidFreqTableRecursive accumulatorMap inCount (totalCount + 1) tl
-    where hd = B.head bytesToAdd
-          tl = B.tail bytesToAdd
-          isIn = Map.member hd accumulatorMap
-          isEmpty = B.null bytesToAdd
-          isNull = isEmpty && (totalCount == 0)
+buidFreqTableFold :: (Int, Int, Map.Map Word8 Double) -> Word8 -> (Int, Int, Map.Map Word8 Double)
+buidFreqTableFold (inCount, totalCount, accumulatorMap) newByte
+    | isIn      = (inCount + 1, totalCount, Map.adjust (+(1/realToFrac totalCount)) newByte accumulatorMap)
+    | otherwise = (inCount, totalCount, accumulatorMap)
+    where isIn = Map.member newByte accumulatorMap
 
-charToWord8 :: Char -> Word8
+-- buidFreqTableRecursive :: Map.Map Word8 Double -> Double -> Double -> B.ByteString -> (Double, Map.Map Word8 Double)
+-- buidFreqTableRecursive accumulatorMap inCount totalCount bytesToAdd
+--     | isNull    = (0, accumulatorMap)
+--     | isEmpty   = {-# SCC "build-branch-empty" #-} ((totalCount - inCount) / totalCount, {-# SCC "build-normalize-map" #-} Map.map (/inCount) accumulatorMap)
+--     | isIn      = {-# SCC "build-branch-in" #-} let newmap = {-# SCC "build-adjust-map" #-} Map.adjust (+1) hd accumulatorMap
+--                   in  buidFreqTableRecursive newmap (inCount + 1) (totalCount + 1) tl
+--     | otherwise = buidFreqTableRecursive accumulatorMap inCount (totalCount + 1) tl
+--     where hd = B.head bytesToAdd
+--           tl = B.tail bytesToAdd
+--           isIn = {-# SCC "build-isin?" #-} Map.member hd accumulatorMap  -- fix with memoization
+--           isEmpty = B.null bytesToAdd
+--           isNull = isEmpty && (totalCount == 0)
+
+charToWord8 :: UTF8Char -> Word8
 charToWord8 = B.head . TxtEnc.encodeUtf8 . Txt.singleton
 
-word8ToChar :: Word8 -> Char
+word8ToChar :: Word8 -> UTF8Char
 word8ToChar = head . Txt.unpack . TxtEnc.decodeUtf8 . B.singleton
 
-bytes_to_string :: B.ByteString -> String
-bytes_to_string = Txt.unpack . TxtEnc.decodeUtf8With (\_ _ -> Just '�')
+bytesToString :: B.ByteString -> UTF8String
+bytesToString = Txt.unpack . TxtEnc.decodeUtf8With (\_ _ -> Just '�')
 
-freqTableDelta :: Map.Map Word8 Float -> Map.Map Word8 Float -> Float
-freqTableDelta x y = sum $ Map.elems $ freqTableDifference x y
+stringToBytes :: UTF8String -> B.ByteString
+stringToBytes = TxtEnc.encodeUtf8 . Txt.pack
 
-freqTableDifference :: Map.Map Word8 Float -> Map.Map Word8 Float -> Map.Map Word8 Float
-freqTableDifference x y = Map.differenceWith (\a b -> Just $ abs (a - b)) x y
+freqTableDelta :: Map.Map Word8 Double -> Map.Map Word8 Double -> Double
+freqTableDelta x y = sum [abs (snd (Map.elemAt i x) - snd (Map.elemAt i y)) | i <- [0..Map.size x - 1]]
+
+
+plusNL :: B.ByteString -> B.ByteString
+plusNL x = B.append x $ B.singleton (charToWord8 '\n')
 
 
 -- Data
-englishFreqTable :: Map.Map Word8 Float
-englishFreqTable = Map.fromList $ map (\(w, f) -> (charToWord8 w, f))
+englishFreqTable :: Map.Map Word8 Double
+englishFreqTable = Map.fromList $ map (first charToWord8)
     [ ('A', 0.0651738)
     , ('B', 0.0124248)
     , ('C', 0.0217339)
@@ -132,10 +168,25 @@ englishFreqTable = Map.fromList $ map (\(w, f) -> (charToWord8 w, f))
     , (' ', 0.1918182)
     ]
 
-asciiFreqTableNoNL :: Map.Map Word8 Float
-asciiFreqTableNoNL = Map.update (\_ -> Just 0.0) (10::Word8) asciiFreqTable
+asciiFreqTableNoNL :: Map.Map Word8 Double
+asciiFreqTableNoNL = freqTableRemove 10 asciiFreqTable
 
-asciiFreqTable :: Map.Map Word8 Float
+-- Remove an element of a frequency table and re-normalize it
+freqTableRemove :: (Ord a) => a -> Map.Map a Double -> Map.Map a Double
+freqTableRemove = freqTableSetFreq 0.0
+
+-- Set an element of a frequency table to a new value (<1) and re-normalize
+-- The new value will be the new *normalized* frequency
+freqTableSetFreq :: (Ord a) => Double -> a -> Map.Map a Double -> Map.Map a Double
+freqTableSetFreq vNew k oldMap = Map.map normalizer newMap
+    where newMap     = Map.update (\_ -> Just vNew) k oldMap
+          normalizer = case Map.lookup k oldMap
+                             of Just 1.0  -> id  -- Avoid division by zero
+                                Just vOld -> \x -> (x / (1.0 - vOld)) * (1.0 - vNew)
+                                _         -> id
+
+
+asciiFreqTable :: Map.Map Word8 Double
 asciiFreqTable = Map.fromList -- This comes from IMDb biographies (~154 MB)
     [ ( 10, 0.0166623841) -- New lines are common!
       -- NB: this uses \n line endings; you should strip \r endings!
@@ -331,4 +382,265 @@ asciiFreqTable = Map.fromList -- This comes from IMDb biographies (~154 MB)
     , (253, 0.0000003668)
     , (254, 0.0000000497)
     , (255, 0.0000000249)
+    ]
+
+
+hexToBytesTable :: Map.Map (Word8, Word8) Word8
+hexToBytesTable = Map.fromList $ map (\x -> ((charToWord8 *** charToWord8) (fst x), snd x))
+    [ (('0', '0'), 0)
+    , (('0', '1'), 1)
+    , (('0', '2'), 2)
+    , (('0', '3'), 3)
+    , (('0', '4'), 4)
+    , (('0', '5'), 5)
+    , (('0', '6'), 6)
+    , (('0', '7'), 7)
+    , (('0', '8'), 8)
+    , (('0', '9'), 9)
+    , (('0', 'a'), 10)
+    , (('0', 'b'), 11)
+    , (('0', 'c'), 12)
+    , (('0', 'd'), 13)
+    , (('0', 'e'), 14)
+    , (('0', 'f'), 15)
+    , (('1', '0'), 16)
+    , (('1', '1'), 17)
+    , (('1', '2'), 18)
+    , (('1', '3'), 19)
+    , (('1', '4'), 20)
+    , (('1', '5'), 21)
+    , (('1', '6'), 22)
+    , (('1', '7'), 23)
+    , (('1', '8'), 24)
+    , (('1', '9'), 25)
+    , (('1', 'a'), 26)
+    , (('1', 'b'), 27)
+    , (('1', 'c'), 28)
+    , (('1', 'd'), 29)
+    , (('1', 'e'), 30)
+    , (('1', 'f'), 31)
+    , (('2', '0'), 32)
+    , (('2', '1'), 33)
+    , (('2', '2'), 34)
+    , (('2', '3'), 35)
+    , (('2', '4'), 36)
+    , (('2', '5'), 37)
+    , (('2', '6'), 38)
+    , (('2', '7'), 39)
+    , (('2', '8'), 40)
+    , (('2', '9'), 41)
+    , (('2', 'a'), 42)
+    , (('2', 'b'), 43)
+    , (('2', 'c'), 44)
+    , (('2', 'd'), 45)
+    , (('2', 'e'), 46)
+    , (('2', 'f'), 47)
+    , (('3', '0'), 48)
+    , (('3', '1'), 49)
+    , (('3', '2'), 50)
+    , (('3', '3'), 51)
+    , (('3', '4'), 52)
+    , (('3', '5'), 53)
+    , (('3', '6'), 54)
+    , (('3', '7'), 55)
+    , (('3', '8'), 56)
+    , (('3', '9'), 57)
+    , (('3', 'a'), 58)
+    , (('3', 'b'), 59)
+    , (('3', 'c'), 60)
+    , (('3', 'd'), 61)
+    , (('3', 'e'), 62)
+    , (('3', 'f'), 63)
+    , (('4', '0'), 64)
+    , (('4', '1'), 65)
+    , (('4', '2'), 66)
+    , (('4', '3'), 67)
+    , (('4', '4'), 68)
+    , (('4', '5'), 69)
+    , (('4', '6'), 70)
+    , (('4', '7'), 71)
+    , (('4', '8'), 72)
+    , (('4', '9'), 73)
+    , (('4', 'a'), 74)
+    , (('4', 'b'), 75)
+    , (('4', 'c'), 76)
+    , (('4', 'd'), 77)
+    , (('4', 'e'), 78)
+    , (('4', 'f'), 79)
+    , (('5', '0'), 80)
+    , (('5', '1'), 81)
+    , (('5', '2'), 82)
+    , (('5', '3'), 83)
+    , (('5', '4'), 84)
+    , (('5', '5'), 85)
+    , (('5', '6'), 86)
+    , (('5', '7'), 87)
+    , (('5', '8'), 88)
+    , (('5', '9'), 89)
+    , (('5', 'a'), 90)
+    , (('5', 'b'), 91)
+    , (('5', 'c'), 92)
+    , (('5', 'd'), 93)
+    , (('5', 'e'), 94)
+    , (('5', 'f'), 95)
+    , (('6', '0'), 96)
+    , (('6', '1'), 97)
+    , (('6', '2'), 98)
+    , (('6', '3'), 99)
+    , (('6', '4'), 100)
+    , (('6', '5'), 101)
+    , (('6', '6'), 102)
+    , (('6', '7'), 103)
+    , (('6', '8'), 104)
+    , (('6', '9'), 105)
+    , (('6', 'a'), 106)
+    , (('6', 'b'), 107)
+    , (('6', 'c'), 108)
+    , (('6', 'd'), 109)
+    , (('6', 'e'), 110)
+    , (('6', 'f'), 111)
+    , (('7', '0'), 112)
+    , (('7', '1'), 113)
+    , (('7', '2'), 114)
+    , (('7', '3'), 115)
+    , (('7', '4'), 116)
+    , (('7', '5'), 117)
+    , (('7', '6'), 118)
+    , (('7', '7'), 119)
+    , (('7', '8'), 120)
+    , (('7', '9'), 121)
+    , (('7', 'a'), 122)
+    , (('7', 'b'), 123)
+    , (('7', 'c'), 124)
+    , (('7', 'd'), 125)
+    , (('7', 'e'), 126)
+    , (('7', 'f'), 127)
+    , (('8', '0'), 128)
+    , (('8', '1'), 129)
+    , (('8', '2'), 130)
+    , (('8', '3'), 131)
+    , (('8', '4'), 132)
+    , (('8', '5'), 133)
+    , (('8', '6'), 134)
+    , (('8', '7'), 135)
+    , (('8', '8'), 136)
+    , (('8', '9'), 137)
+    , (('8', 'a'), 138)
+    , (('8', 'b'), 139)
+    , (('8', 'c'), 140)
+    , (('8', 'd'), 141)
+    , (('8', 'e'), 142)
+    , (('8', 'f'), 143)
+    , (('9', '0'), 144)
+    , (('9', '1'), 145)
+    , (('9', '2'), 146)
+    , (('9', '3'), 147)
+    , (('9', '4'), 148)
+    , (('9', '5'), 149)
+    , (('9', '6'), 150)
+    , (('9', '7'), 151)
+    , (('9', '8'), 152)
+    , (('9', '9'), 153)
+    , (('9', 'a'), 154)
+    , (('9', 'b'), 155)
+    , (('9', 'c'), 156)
+    , (('9', 'd'), 157)
+    , (('9', 'e'), 158)
+    , (('9', 'f'), 159)
+    , (('a', '0'), 160)
+    , (('a', '1'), 161)
+    , (('a', '2'), 162)
+    , (('a', '3'), 163)
+    , (('a', '4'), 164)
+    , (('a', '5'), 165)
+    , (('a', '6'), 166)
+    , (('a', '7'), 167)
+    , (('a', '8'), 168)
+    , (('a', '9'), 169)
+    , (('a', 'a'), 170)
+    , (('a', 'b'), 171)
+    , (('a', 'c'), 172)
+    , (('a', 'd'), 173)
+    , (('a', 'e'), 174)
+    , (('a', 'f'), 175)
+    , (('b', '0'), 176)
+    , (('b', '1'), 177)
+    , (('b', '2'), 178)
+    , (('b', '3'), 179)
+    , (('b', '4'), 180)
+    , (('b', '5'), 181)
+    , (('b', '6'), 182)
+    , (('b', '7'), 183)
+    , (('b', '8'), 184)
+    , (('b', '9'), 185)
+    , (('b', 'a'), 186)
+    , (('b', 'b'), 187)
+    , (('b', 'c'), 188)
+    , (('b', 'd'), 189)
+    , (('b', 'e'), 190)
+    , (('b', 'f'), 191)
+    , (('c', '0'), 192)
+    , (('c', '1'), 193)
+    , (('c', '2'), 194)
+    , (('c', '3'), 195)
+    , (('c', '4'), 196)
+    , (('c', '5'), 197)
+    , (('c', '6'), 198)
+    , (('c', '7'), 199)
+    , (('c', '8'), 200)
+    , (('c', '9'), 201)
+    , (('c', 'a'), 202)
+    , (('c', 'b'), 203)
+    , (('c', 'c'), 204)
+    , (('c', 'd'), 205)
+    , (('c', 'e'), 206)
+    , (('c', 'f'), 207)
+    , (('d', '0'), 208)
+    , (('d', '1'), 209)
+    , (('d', '2'), 210)
+    , (('d', '3'), 211)
+    , (('d', '4'), 212)
+    , (('d', '5'), 213)
+    , (('d', '6'), 214)
+    , (('d', '7'), 215)
+    , (('d', '8'), 216)
+    , (('d', '9'), 217)
+    , (('d', 'a'), 218)
+    , (('d', 'b'), 219)
+    , (('d', 'c'), 220)
+    , (('d', 'd'), 221)
+    , (('d', 'e'), 222)
+    , (('d', 'f'), 223)
+    , (('e', '0'), 224)
+    , (('e', '1'), 225)
+    , (('e', '2'), 226)
+    , (('e', '3'), 227)
+    , (('e', '4'), 228)
+    , (('e', '5'), 229)
+    , (('e', '6'), 230)
+    , (('e', '7'), 231)
+    , (('e', '8'), 232)
+    , (('e', '9'), 233)
+    , (('e', 'a'), 234)
+    , (('e', 'b'), 235)
+    , (('e', 'c'), 236)
+    , (('e', 'd'), 237)
+    , (('e', 'e'), 238)
+    , (('e', 'f'), 239)
+    , (('f', '0'), 240)
+    , (('f', '1'), 241)
+    , (('f', '2'), 242)
+    , (('f', '3'), 243)
+    , (('f', '4'), 244)
+    , (('f', '5'), 245)
+    , (('f', '6'), 246)
+    , (('f', '7'), 247)
+    , (('f', '8'), 248)
+    , (('f', '9'), 249)
+    , (('f', 'a'), 250)
+    , (('f', 'b'), 251)
+    , (('f', 'c'), 252)
+    , (('f', 'd'), 253)
+    , (('f', 'e'), 254)
+    , (('f', 'f'), 255)
     ]

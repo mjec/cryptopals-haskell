@@ -2,23 +2,26 @@
 
 module Main where
 
-import Help
-import Lib (Error)
+import           Help
+import           Lib                  (Error, bytesToString, plusNL,
+                                       stringToBytes)
 
-import qualified Set1 as S1
+import qualified Set1                 as S1
 
-import System.Environment
-import System.IO
-import System.Exit
+import qualified Data.ByteString      as BS
+import qualified Data.ByteString.Lazy as B
+import           System.Environment
+import           System.Exit
+import           System.IO
 
 
 -- Dispatcher
-dispatch :: [(String, ([String] -> Either Error String))]
-dispatch = [ ("help", return_help)
-           , ("1-1", S1.challenge1)
-           , ("1-2", S1.challenge2)
-           , ("1-3", S1.challenge3)
-           , ("1-4", S1.challenge4)
+dispatch :: [(B.ByteString, [B.ByteString] -> Either Error B.ByteString)]
+dispatch = [ (stringToBytes "help", returnHelp)
+           , (stringToBytes "1-1", S1.challenge1)
+           , (stringToBytes "1-2", S1.challenge2)
+           , (stringToBytes "1-3", S1.challenge3)
+           , (stringToBytes "1-4", S1.challenge4)
            -- , ("1-5", S1.challenge5)
            -- , ("1-6", S1.challenge6)
            -- , ("1-7", S1.challenge7)
@@ -27,41 +30,41 @@ dispatch = [ ("help", return_help)
 
 -- The function takes arguments and (lines getContents) and returns what should
 -- be passed to the dispatch function.
-needs_stdin :: [(String, [String] -> [String] -> [String])]
-needs_stdin = [ ("1-4", \_ stdin -> filter (\l -> not $ null l) stdin)
+needsStdin :: [(B.ByteString, [B.ByteString] -> [B.ByteString] -> [B.ByteString])]
+needsStdin = [ (stringToBytes "1-4", \_ stdin -> stdin)
               ]
 
-parse_args :: String -> [String] -> IO ()
-parse_args _ []       = putStr $ always_return_help []
-parse_args input (cmd:args) = case cmdFunc
-                              of Right s -> putStr s
-                                 Left (err, _, False) -> error_and_exit err
-                                 Left (err, hargs, True) -> usage_and_exit err hargs
+parseArgs :: B.ByteString -> [B.ByteString] -> IO ()
+parseArgs _ []       = putStr $ bytesToString $ alwaysReturnHelp []
+parseArgs input (cmd:args) = case cmdFunc
+                              of Right s -> putStr $ bytesToString s
+                                 Left (err, _, False) -> exitWithError err
+                                 Left (err, hargs, True) -> exitWithUsage err hargs
       where cmdFunc = case lookup cmd dispatch
-                      of Just action -> case lookup cmd needs_stdin
+                      of Just action -> case lookup cmd needsStdin
                                         of Nothing    -> action args
-                                           Just    fn -> action $ (fn args (lines input))
+                                           Just    fn -> action $ fn args [input]
                          Nothing     -> Left ("Unrecognised command", [], True)
 
-error_and_exit :: String -> IO ()
-error_and_exit msg = do
+exitWithError :: String -> IO ()
+exitWithError msg = do
     hPutStrLn stderr msg
     exitFailure
 
-usage_and_exit :: String -> [String] -> IO ()
-usage_and_exit msg args = do
+exitWithUsage :: String -> [B.ByteString] -> IO ()
+exitWithUsage msg args = do
     hPutStrLn stderr msg
-    putStr $ always_return_help args
+    putStr $ bytesToString $ alwaysReturnHelp args
     exitFailure
 
-always_return_help :: [String] -> String
-always_return_help args = case return_help args
+alwaysReturnHelp :: [B.ByteString] -> B.ByteString
+alwaysReturnHelp args = case returnHelp args
                           of Right s        -> s
-                             Left (s, _, _) -> unlines $ s : lines (always_return_help [])
+                             Left (s, _, _) -> B.append (plusNL $ stringToBytes s) $ alwaysReturnHelp []
 
 -- Entry point
 main :: IO ()
 main = do
-    input <- getContents
+    input <- B.hGetContents stdin
     args <- getArgs
-    parse_args input args
+    parseArgs input $ map stringToBytes args
