@@ -1,2 +1,12 @@
+# General stack working files
 .stack-work/
+
+# Profiling and coverage working files
 *.hp
+.hpc/
+*.aux
+*.prof
+*.ps
+*.tix
+hpc_*
+*.hs.html
