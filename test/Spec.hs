@@ -16,6 +16,7 @@ main = defaultMain
     , testCase "Set 1 Challenge 3" test_S1C3
     , testCase "Set 1 Challenge 4" test_S1C4
     , testCase "Set 1 Challenge 5" test_S1C5
+    , testCase "Set 1 Challenge 6 - hamming distance" test_S1C6_hamming
     ]
 
 test_S1C1 :: Assertion
@@ -39,7 +40,7 @@ test_S1C3 = assertEqual "Set 1 Challenge 3" output result
 test_S1C4 :: Assertion
 test_S1C4 = assertEqual "Set 1 Challenge 4" output result
   where result = S1.challenge4 input
-        input = map Lib.stringToBytes [ "7b5a4215415d544115415d5015455447414c155c46155f4058455c5b523f"
+        input = [Lib.stringToBytes $ unlines [ "7b5a4215415d544115415d5015455447414c155c46155f4058455c5b523f"
                 , "0864eb4935144c501103a71851370719301bec57093a0929ea3f18060e55"
                 , "2d395e57143359e80efffb13330633ea19e323077b4814571e5a3de73a1f"
                 , "52e73c1d53330846243c422d3e1b374b5209543903e3195c041c251b7c04"
@@ -49,17 +50,16 @@ test_S1C4 = assertEqual "Set 1 Challenge 4" output result
                 , "100b2135190505264254005618f51152136125370eef27383e45350118ed"
                 , "3947452914e0223f1d040943313c193f295b221e573e1b5723391d090d1f"
                 , "2c33141859392b04155e3d4e393b322526ee3e581d1b3d6817374d0c085b"
-                ]
+                ]]
         output = Right $ Lib.stringToBytes "Now that the party is jumping\n"
 
 test_S1C5 :: Assertion
 test_S1C5 = assertEqual "Set 1 Challenge 5" output result
   where result = S1.challenge5 input
         input = map Lib.stringToBytes [ "ICE"
-                , "Burning 'em, if you ain't quick and nimble"
-                , "I go crazy when I hear a cymbal"
+                , "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal"
                 ]
-        output = Right $ Lib.stringToBytes $ unlines
-            [ "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272"
-            , "a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
-            ]
+        output = Right $ Lib.stringToBytes "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f\n"
+
+test_S1C6_hamming :: Assertion
+test_S1C6_hamming = assertEqual "Set 1 Challenge 6 - hamming distance" 37 $ Lib.hammingDistance (Lib.stringToBytes "this is a test") (Lib.stringToBytes "wokka wokka!!!")

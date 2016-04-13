@@ -22,6 +22,7 @@ dispatch = [ (stringToBytes "help", returnHelp)
            , (stringToBytes "1-2", S1.challenge2)
            , (stringToBytes "1-3", S1.challenge3)
            , (stringToBytes "1-4", S1.challenge4)
+           , (stringToBytes "1-5", S1.challenge5)
            -- , ("1-5", S1.challenge5)
            -- , ("1-6", S1.challenge6)
            -- , ("1-7", S1.challenge7)
@@ -32,7 +33,8 @@ dispatch = [ (stringToBytes "help", returnHelp)
 -- be passed to the dispatch function.
 needsStdin :: [(B.ByteString, [B.ByteString] -> [B.ByteString] -> [B.ByteString])]
 needsStdin = [ (stringToBytes "1-4", \_ stdin -> stdin)
-              ]
+             , (stringToBytes "1-5", \args stdin -> if null args then [] else head args : stdin)
+             ]
 
 parseArgs :: B.ByteString -> [B.ByteString] -> IO ()
 parseArgs _ []       = putStr $ bytesToString $ alwaysReturnHelp []

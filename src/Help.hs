@@ -72,7 +72,8 @@ s1c5Help :: [B.ByteString] -> Either Error B.ByteString
 s1c5Help _ = Right $ stringToBytes $ unlines
         [ "Usage: cryptopals 1-5 key < file"
         , ""
-        , "Takes an ASCII key and then arbitrary standard input. Returns each"
-        , "line of the input xor'd with the key (repeating as necessary). One"
-        , "output line per input line. Each output line is hex encoded."
+        , "Takes an ASCII key (not hex!) and then arbitrary standard input."
+        , "Returns each line of the input xor'd with the key (repeating as"
+        , "necessary). One output line per input line. Each output line is"
+        , "hex encoded."
         ]

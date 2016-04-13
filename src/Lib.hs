@@ -16,6 +16,7 @@ module Lib
 
       -- ByteString helper functions
     , bitwiseCombine
+    , hammingDistance
     , bytesToString
     , buildFreqTable
 --    , freqTableDifference
@@ -72,6 +73,9 @@ isHex x = all (`elem` map charToWord8 (['A'..'F'] ++ ['a'..'f'] ++ ['0'..'9'])) 
 bitwiseCombine :: (Word8 -> Word8 -> Word8) -> B.ByteString -> B.ByteString -> B.ByteString
 bitwiseCombine f x y = B.pack $ B.zipWith f x y
 
+hammingDistance :: B.ByteString -> B.ByteString -> Int
+hammingDistance x y = B.foldl (\a b -> a + popCount b) 0 $ bitwiseCombine xor x y
+
 
 buildDelta :: Int -> Map.Map Word8 Double -> B.ByteString -> Double
 buildDelta totalCount startingMap haystack = Map.fold (\x y -> abs x + y) 0 $ B.foldl (flip (Map.adjust (\a -> a - (1/realToFrac totalCount)))) startingMap haystack
@@ -123,7 +127,6 @@ stringToBytes = TxtEnc.encodeUtf8 . Txt.pack
 
 freqTableDelta :: Map.Map Word8 Double -> Map.Map Word8 Double -> Double
 freqTableDelta x y = sum [abs (snd (Map.elemAt i x) - snd (Map.elemAt i y)) | i <- [0..Map.size x - 1]]
-
 
 plusNL :: B.ByteString -> B.ByteString
 plusNL x = B.append x $ B.singleton (charToWord8 '\n')

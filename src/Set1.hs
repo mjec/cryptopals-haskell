@@ -100,4 +100,8 @@ challenge4 input
 
 -- Challenge 5
 challenge5 :: [B.ByteString] -> Either Error B.ByteString
-challenge5 inputLines = undefined
+challenge5 input
+    | null input = Left ("You need to supply a key", [stringToBytes "1-5"], True)
+    | otherwise = Right $ plusNL $ B.concat [ bytesToHex $ bitwiseCombine xor ln (B.cycle key) | ln <- text]
+    where key = head input
+          text = tail input
