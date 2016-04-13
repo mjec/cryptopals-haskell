@@ -4,6 +4,7 @@ module Set1
     , challenge3
     , challenge4
     , challenge5
+    , challenge6
     ) where
 
 import           Help
@@ -11,10 +12,14 @@ import           Lib
 
 import           System.IO
 
+
+import qualified Debug.Trace          as Debug
+
 import           Numeric              (showHex)
 
 import           Data.Bits
 import qualified Data.ByteString.Lazy as B
+import qualified Data.Function
 import           Data.List
 import qualified Data.Map             as Map
 import           Data.Word
@@ -97,11 +102,74 @@ challenge4 input
     where absoluteBest = minimumBy (\(_, (_, x)) (_, (_, y)) -> compare x y) [(x, bestGuess x) | x <- map hexToBytes $ B.split (charToWord8 '\n') (head input)]
           bestGuess = minimumBy (\(_, x) (_, y) -> compare x y) . singleByteXorProbabilities
 
+solveSingleByteXor :: B.ByteString -> (Word8, Double)
+solveSingleByteXor = minimumBy (\(_, x) (_, y) -> compare x y) . singleByteXorProbabilities
 
 -- Challenge 5
 challenge5 :: [B.ByteString] -> Either Error B.ByteString
 challenge5 input
     | null input = Left ("You need to supply a key", [stringToBytes "1-5"], True)
-    | otherwise = Right $ plusNL $ B.concat [ bytesToHex $ bitwiseCombine xor ln (B.cycle key) | ln <- text]
+    | otherwise = Right $ plusNL $ B.concat [bytesToHex $ bitwiseCombine xor ln (B.cycle key) | ln <- text]
     where key = head input
           text = tail input
+
+
+-- Challenge 6
+challenge6 :: [B.ByteString] -> Either Error B.ByteString
+challenge6 input
+    | null input = Left ("You need to supply some input", [stringToBytes "1-6"], True)
+    | otherwise = Right $ plusNL $ bitwiseCombine xor str (B.cycle key)
+        where key = fst
+                    $ minimumBy
+                        (Data.Function.on compare snd)
+                        [
+                            (   B.pack
+                                    $ map fst [solveSingleByteXor c | c <- chunks],
+                                sum (map snd [solveSingleByteXor c | c <- chunks])
+                                    / fromIntegral (length chunks)
+                            )
+                            | chunks <- possibleChunks]
+              possibleChunks = [B.transpose (strToTranspose n) | n <- likelyKeyLengths]
+              strToTranspose n = case Map.lookup n segmentedStr
+                                   of Just x -> x
+                                      _      -> []
+              likelyKeyLengths = map snd
+                                $ take numberOfLikelyKeyLengths
+                                $ Map.toAscList
+                                $ Map.foldWithKey
+                                    (\size chunks acc
+                                        -> Map.insert
+                                                (averageNormalizedHammingDistance
+                                                    $ take (2 * numberOfSegmentsToCheck) chunks)
+                                                size
+                                                acc)
+                                    Map.empty
+                                    segmentedStr
+              segmentedStr = Map.fromList [(n, splitBytes n str) | n <- [shortestKeyLength..longestKeyLength]]
+              str = base64ToBytes $ head input
+              numberOfSegmentsToCheck = 4
+              numberOfLikelyKeyLengths = 3
+              shortestKeyLength = 2
+              longestKeyLength = 40
+
+-- Splits an input byte string into an array of byte strings, each of which is <= n bytes in length
+splitBytes :: Int -> B.ByteString -> [B.ByteString]
+splitBytes n bytes
+    | B.null bytes = []
+    | otherwise    = fst split : splitBytes n (snd split)
+        where split = B.splitAt (fromIntegral n) bytes
+
+-- Hamming distance between two byte strings, divided by the length of the shorter string
+-- (we use the shorter string because hammingDistance truncates the longer string)
+normalizedHammingDistance :: B.ByteString -> B.ByteString -> Double
+normalizedHammingDistance x y = realToFrac (hammingDistance x y) / realToFrac (min (B.length x) (B.length y))
+
+-- Gets the average hamming distance of each sequential pair of ByteStrings in the array
+averageNormalizedHammingDistance :: [B.ByteString] -> Double
+averageNormalizedHammingDistance = averageNormalizedHammingDistance' (0, 0)
+
+averageNormalizedHammingDistance' :: (Double, Int) -> [B.ByteString] -> Double
+averageNormalizedHammingDistance' (acc, count) [] = if count == 0 then 0 else acc / fromIntegral count
+averageNormalizedHammingDistance' (acc, count) [_] = if count == 0 then 0 else acc / fromIntegral count
+averageNormalizedHammingDistance' (acc, count) (x:y:remainder) = averageNormalizedHammingDistance' (acc + h, count + 1) remainder
+    where h = normalizedHammingDistance x y

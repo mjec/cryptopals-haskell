@@ -73,6 +73,7 @@ isHex x = all (`elem` map charToWord8 (['A'..'F'] ++ ['a'..'f'] ++ ['0'..'9'])) 
 bitwiseCombine :: (Word8 -> Word8 -> Word8) -> B.ByteString -> B.ByteString -> B.ByteString
 bitwiseCombine f x y = B.pack $ B.zipWith f x y
 
+-- NB: if the ByteStrings are not of euqal length, this truncates the longer one
 hammingDistance :: B.ByteString -> B.ByteString -> Int
 hammingDistance x y = B.foldl (\a b -> a + popCount b) 0 $ bitwiseCombine xor x y
 

@@ -16,7 +16,8 @@ main = defaultMain
     , testCase "Set 1 Challenge 3" test_S1C3
     , testCase "Set 1 Challenge 4" test_S1C4
     , testCase "Set 1 Challenge 5" test_S1C5
-    , testCase "Set 1 Challenge 6 - hamming distance" test_S1C6_hamming
+    , testCase "Hamming distance" test_S1C6_hamming
+    , testCase "Set 1 Challenge 6" test_S1C6
     ]
 
 test_S1C1 :: Assertion
@@ -62,4 +63,46 @@ test_S1C5 = assertEqual "Set 1 Challenge 5" output result
         output = Right $ Lib.stringToBytes "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f\n"
 
 test_S1C6_hamming :: Assertion
-test_S1C6_hamming = assertEqual "Set 1 Challenge 6 - hamming distance" 37 $ Lib.hammingDistance (Lib.stringToBytes "this is a test") (Lib.stringToBytes "wokka wokka!!!")
+test_S1C6_hamming = assertEqual "Hamming distance" 37 $ Lib.hammingDistance (Lib.stringToBytes "this is a test") (Lib.stringToBytes "wokka wokka!!!")
+
+test_S1C6 :: Assertion
+test_S1C6 = assertEqual "Set 1 Challenge 6" output result
+    where result = S1.challenge6 input
+          input = [Lib.stringToBytes $ unlines
+                [ "HUIfTQsPAh9PE048GmllH0kcDk4TAQsHThsBFkU2AB4BSWQgVB0dQzNTTmVS"
+                , "BgBHVBwNRU0HBAxTEjwMHghJGgkRTxRMIRpHKwAFHUdZEQQJAGQmB1MANxYG"
+                , "DBoXQR0BUlQwXwAgEwoFR08SSAhFTmU+Fgk4RQYFCBpGB08fWXh+amI2DB0P"
+                , "QQ1IBlUaGwAdQnQEHgFJGgkRAlJ6f0kASDoAGhNJGk9FSA8dDVMEOgFSGQEL"
+                , "QRMGAEwxX1NiFQYHCQdUCxdBFBZJeTM1CxsBBQ9GB08dTnhOSCdSBAcMRVhI"
+                , "CEEATyBUCHQLHRlJAgAOFlwAUjBpZR9JAgJUAAELB04CEFMBJhAVTQIHAh9P"
+                , "G054MGk2UgoBCVQGBwlTTgIQUwg7EAYFSQ8PEE87ADpfRyscSWQzT1QCEFMa"
+                , "TwUWEXQMBk0PAg4DQ1JMPU4ALwtJDQhOFw0VVB1PDhxFXigLTRkBEgcKVVN4"
+                , "Tk9iBgELR1MdDAAAFwoFHww6Ql5NLgFBIg4cSTRWQWI1Bk9HKn47CE8BGwFT"
+                , "QjcEBx4MThUcDgYHKxpUKhdJGQZZVCFFVwcDBVMHMUV4LAcKQR0JUlk3TwAm"
+                , "HQdJEwATARNFTg5JFwQ5C15NHQYEGk94dzBDADsdHE4UVBUaDE5JTwgHRTkA"
+                , "Umc6AUETCgYAN1xGYlUKDxJTEUgsAA0ABwcXOwlSGQELQQcbE0c9GioWGgwc"
+                , "AgcHSAtPTgsAABY9C1VNCAINGxgXRHgwaWUfSQcJABkRRU8ZAUkDDTUWF01j"
+                , "OgkRTxVJKlZJJwFJHQYADUgRSAsWSR8KIgBSAAxOABoLUlQwW1RiGxpOCEtU"
+                , "YiROCk8gUwY1C1IJCAACEU8QRSxORTBSHQYGTlQJC1lOBAAXRTpCUh0FDxhU"
+                ]]
+          output = Right $ Lib.stringToBytes $ unlines
+              [ "I'm back and I'm ringin' the bell "
+              , "A rockin' on the mike while the fly girls yell "
+              , "In ecstasy in the back of me "
+              , "Well that's my DJ Deshay cuttin' all them Z's "
+              , "Hittin' hard and the girlies goin' crazy "
+              , "Vanilla's on the mike, man I'm not lazy. "
+              , ""
+              , "I'm lettin' my drug kick in "
+              , "It controls my mouth and I begin "
+              , "To just let it flow, let my concepts go "
+              , "My posse's to the side yellin', Go Vanilla Go! "
+              , ""
+              , "Smooth 'cause that's the way I will be "
+              , "And if you don't give a damn, then "
+              , "Why you starin' at me "
+              , "So get off 'cause I control the stage "
+              , "There's no dissin' allowed "
+              , "I'm in my own phase "
+              , "The girlies sa y they love me and that is ok "
+              , "And I can dance better than any kid n' play "]
