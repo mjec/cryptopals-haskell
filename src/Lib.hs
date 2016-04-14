@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 module Lib
     (
     -- Types
@@ -49,10 +48,6 @@ import qualified Data.Text.Lazy.Encoding     as TxtEnc
 import           Data.Word
 
 import qualified Codec.Crypto.AES            as AES
-
--- import           Crypto.Cipher.AES
--- import           Crypto.Cipher.Types
--- import           Crypto.Error
 
 -- Error
 -- (error message, arguments for return_help, and whether to show usage)
@@ -145,9 +140,6 @@ plusNL x = B.append x $ B.singleton (charToWord8 '\n')
 -- AES
 decodeAES128ECB :: B.ByteString -> B.ByteString -> B.ByteString
 decodeAES128ECB k = AES.crypt AES.ECB (B.toStrict k) (B.toStrict $ B.replicate 16 (0::Word8)) AES.Decrypt
--- decodeAESECB key str = case cipherInit key
---                             of  CryptoPassed cipher -> ecbDecrypt (cipher::AES128) str
---                                 CryptoFailed x -> stringToBytes "*** FAILED ***"
 
 -- Data
 englishFreqTable :: Map.Map Word8 Double
