@@ -9,7 +9,6 @@ module Set1
     , challenge8
     ) where
 
-import           Help
 import           Lib
 
 import           System.IO
