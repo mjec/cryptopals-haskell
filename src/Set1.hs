@@ -176,6 +176,7 @@ averageNormalizedHammingDistance' (acc, count) (x:y:remainder) = averageNormaliz
     where h = normalizedHammingDistance x y
 
 
+-- Challenge 7
 challenge7 :: [B.ByteString] -> Either Error B.ByteString
 challenge7 input
     | null input         = Left ("You need to supply a key and standard input", [stringToBytes "1-7"], True)
@@ -183,3 +184,13 @@ challenge7 input
     | otherwise          = Right $ decodeAES128ECB key str
     where key = head input
           str = base64ToBytes $ head $ tail input
+
+
+-- Challenge 8
+-- challenge7 :: [B.ByteString] -> Either Error B.ByteString
+-- challenge7 input
+--   | null input         = Left ("You need to supply a key and standard input", [stringToBytes "1-7"], True)
+--   | 16 /= B.length key = Left ("Your key must be exactly 16 ASCII bytes (maybe enclose it in quotes?)", [stringToBytes "1-7"], True)
+--   | otherwise          = Right $ decodeAES128ECB key str
+--   where key = head input
+--         str = base64ToBytes $ head $ tail input
