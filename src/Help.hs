@@ -26,6 +26,8 @@ helpDispatch = [ (stringToBytes "1-1", s1c1Help)
                 , (stringToBytes "1-3", s1c3Help)
                 , (stringToBytes "1-4", s1c4Help)
                 , (stringToBytes "1-5", s1c5Help)
+                , (stringToBytes "1-6", s1c6Help)
+                , (stringToBytes "1-7", s1c7Help)
                 ]
 
 s1c1Help :: [B.ByteString] -> Either Error B.ByteString
@@ -76,4 +78,21 @@ s1c5Help _ = Right $ stringToBytes $ unlines
         , "Returns each line of the input xor'd with the key (repeating as"
         , "necessary). One output line per input line. Each output line is"
         , "hex encoded."
+        ]
+
+s1c6Help :: [B.ByteString] -> Either Error B.ByteString
+s1c6Help _ = Right $ stringToBytes $ unlines
+        [ "Usage: cryptopals 1-6 < file"
+        , ""
+        , "Takes base64-encoded standard input of English text xor'd with a"
+        , "key of between two and 40 bytes. Outputs the most likely decoded"
+        , "text."
+        ]
+
+s1c7Help :: [B.ByteString] -> Either Error B.ByteString
+s1c7Help _ = Right $ stringToBytes $ unlines
+        [ "Usage: cryptopals 1-7 key < file"
+        , ""
+        , "Takes a 16 byte ASCII key (not hex!) and base64-encoded standard input."
+        , "Outputs the standard input decrypted with the key using AEC-ECB."
         ]

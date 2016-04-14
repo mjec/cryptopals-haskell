@@ -5,6 +5,7 @@ module Set1
     , challenge4
     , challenge5
     , challenge6
+    , challenge7
     ) where
 
 import           Help
@@ -173,3 +174,12 @@ averageNormalizedHammingDistance' (acc, count) [] = if count == 0 then 0 else ac
 averageNormalizedHammingDistance' (acc, count) [_] = if count == 0 then 0 else acc / fromIntegral count
 averageNormalizedHammingDistance' (acc, count) (x:y:remainder) = averageNormalizedHammingDistance' (acc + h, count + 1) remainder
     where h = normalizedHammingDistance x y
+
+
+challenge7 :: [B.ByteString] -> Either Error B.ByteString
+challenge7 input
+    | null input         = Left ("You need to supply a key and standard input", [stringToBytes "1-7"], True)
+    | 16 /= B.length key = Left ("Your key must be exactly 16 ASCII bytes (maybe enclose it in quotes?)", [stringToBytes "1-7"], True)
+    | otherwise          = Right $ decodeAES128ECB key str
+    where key = head input
+          str = base64ToBytes $ head $ tail input

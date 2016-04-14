@@ -24,10 +24,7 @@ dispatch = [ (stringToBytes "help", returnHelp)
            , (stringToBytes "1-4", S1.challenge4)
            , (stringToBytes "1-5", S1.challenge5)
            , (stringToBytes "1-6", S1.challenge6)
-           -- , ("1-5", S1.challenge5)
-           -- , ("1-6", S1.challenge6)
-           -- , ("1-7", S1.challenge7)
-           -- , ("1-8", S1.challenge8)
+           , (stringToBytes "1-7", S1.challenge7)
            ]
 
 -- The function takes arguments and (lines getContents) and returns what should
@@ -36,6 +33,7 @@ needsStdin :: [(B.ByteString, [B.ByteString] -> [B.ByteString] -> [B.ByteString]
 needsStdin = [ (stringToBytes "1-4", \_ stdin -> stdin)
              , (stringToBytes "1-5", \args stdin -> if null args then [] else head args : stdin)
              , (stringToBytes "1-6", \_ stdin -> stdin)
+             , (stringToBytes "1-7", \args stdin -> if null args then [] else head args : stdin)
              ]
 
 parseArgs :: B.ByteString -> [B.ByteString] -> IO ()
