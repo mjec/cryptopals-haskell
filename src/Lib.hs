@@ -28,7 +28,7 @@ module Lib
     , plusNL
 
     -- Crypto functions
-    , decodeAES128ECB
+    , decryptAES128ECB
 
       -- Data
     , englishFreqTable
@@ -138,8 +138,10 @@ plusNL :: B.ByteString -> B.ByteString
 plusNL x = B.append x $ B.singleton (charToWord8 '\n')
 
 -- AES
-decodeAES128ECB :: B.ByteString -> B.ByteString -> B.ByteString
-decodeAES128ECB k = AES.crypt AES.ECB (B.toStrict k) (B.toStrict $ B.replicate 16 (0::Word8)) AES.Decrypt
+decryptAES128ECB :: B.ByteString -> B.ByteString -> B.ByteString
+decryptAES128ECB k = AES.crypt AES.ECB (B.toStrict k) (B.toStrict $ B.replicate 16 (0::Word8)) AES.Decrypt
+
+
 
 -- Data
 englishFreqTable :: Map.Map Word8 Double
