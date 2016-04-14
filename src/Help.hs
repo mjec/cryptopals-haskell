@@ -8,10 +8,12 @@ import           Lib                  (Error, stringToBytes)
 -- Public functions
 returnHelp :: [B.ByteString] -> Either Error B.ByteString
 returnHelp [] = Right $ stringToBytes $ unlines
-    [ "Usage: cryptopals challenge [input data]"
+    [ "Usage: cryptopals [-n] challenge [challenge arguments]"
     , "       cryptopals help [challenge]"
     , ""
     , "challenge     the cryptopals challenge (e.g. 1-3 for set 1 challenge 3)"
+    , "    -n        do not print trailing newline (NB this *must* be supplied"
+    , "              before the challenge)"
     , "input data    input data for the relevant function (challenge-dependent)"
     , "help          show this help, or help for the specified challenge"
     ]
@@ -29,6 +31,7 @@ helpDispatch = [ (stringToBytes "1-1", s1c1Help)
                 , (stringToBytes "1-6", s1c6Help)
                 , (stringToBytes "1-7", s1c7Help)
                 , (stringToBytes "1-8", s1c8Help)
+                , (stringToBytes "2-9", s1c8Help)
                 ]
 
 s1c1Help :: [B.ByteString] -> Either Error B.ByteString

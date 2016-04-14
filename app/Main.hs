@@ -41,10 +41,10 @@ needsStdin = [ (stringToBytes "1-4", \_ stdin -> stdin)
              , (stringToBytes "1-8", \_ stdin -> stdin)
              ]
 
-parseArgs :: B.ByteString -> [B.ByteString] -> IO ()
-parseArgs _ []       = putStr $ bytesToString $ alwaysReturnHelp []
-parseArgs input (cmd:args) = case cmdFunc
-                              of Right s -> putStr $ bytesToString s
+parseArgs :: Bool -> B.ByteString -> [B.ByteString] -> IO ()
+parseArgs _ _ []       = putStr $ bytesToString $ alwaysReturnHelp []
+parseArgs printNL input (cmd:args) = case cmdFunc
+                              of Right s -> putStr $ printOut s
                                  Left (err, _, False) -> exitWithError err
                                  Left (err, hargs, True) -> exitWithUsage err hargs
       where cmdFunc = case lookup cmd dispatch
@@ -52,6 +52,7 @@ parseArgs input (cmd:args) = case cmdFunc
                                         of Nothing    -> action args
                                            Just    fn -> action $ fn args [input]
                          Nothing     -> Left ("Unrecognised command", [], True)
+            printOut x = if printNL then bytesToString (B.take (B.length x - 1) x) else bytesToString x
 
 exitWithError :: String -> IO ()
 exitWithError msg = do
@@ -74,4 +75,12 @@ main :: IO ()
 main = do
     input <- B.hGetContents stdin
     args <- getArgs
-    parseArgs input $ map stringToBytes args
+    let a
+            | null args = []
+            | head args == "-n" = map stringToBytes (tail args)
+            | otherwise = map stringToBytes args
+        printNL
+            | null args = True
+            | otherwise = head args == "-n"
+        in parseArgs printNL input a
+    exitSuccess
