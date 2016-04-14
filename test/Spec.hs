@@ -26,6 +26,7 @@ main = defaultMain
     , testCase "Set 1 Challenge 7" test_S1C7
     , testCase "Set 1 Challenge 8" test_S1C8
     , testCase "Set 2 Challenge 9" test_S2C9
+    , testCase "Set 2 Challenge 10" test_S2C10
     ]
 
 test_S1C1 :: Assertion
@@ -86,3 +87,9 @@ test_S2C9 = assertEqual "Set 2 Challenge 9" output result
   where result = S2.challenge9 input
         input = S2D.challenge9Input
         output = S2D.challenge9Output
+
+test_S2C10 :: Assertion
+test_S2C10 = assertEqual "Set 2 Challenge 10" output result
+  where result = S2.challenge10 input
+        input = S2D.challenge10Input
+        output = S2D.challenge10Output

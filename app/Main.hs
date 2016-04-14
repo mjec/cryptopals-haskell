@@ -29,6 +29,7 @@ dispatch = [ (stringToBytes "help", returnHelp)
            , (stringToBytes "1-8", S1.challenge8)
 
            , (stringToBytes "2-9", S2.challenge9)
+           , (stringToBytes "2-10", S2.challenge10)
            ]
 
 -- The function takes arguments and (lines getContents) and returns what should
@@ -39,6 +40,7 @@ needsStdin = [ (stringToBytes "1-4", \_ stdin -> stdin)
              , (stringToBytes "1-6", \_ stdin -> stdin)
              , (stringToBytes "1-7", \args stdin -> if null args then [] else head args : stdin)
              , (stringToBytes "1-8", \_ stdin -> stdin)
+             , (stringToBytes "2-10", \args stdin -> if null args then [] else head args : stdin)
              ]
 
 parseArgs :: Bool -> B.ByteString -> [B.ByteString] -> IO ()

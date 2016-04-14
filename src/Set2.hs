@@ -1,5 +1,6 @@
 module Set2
     ( challenge9
+    , challenge10
     ) where
 
 import           Lib
@@ -22,3 +23,11 @@ challenge9 [len, str]
     where lenInt = read (bytesToString len)::Int
 challenge9 [x] = Left ("You need to supply eactly one length and one ASCII string", [stringToBytes "2-9"], True)
 challenge9 _ = Left ("You need to supply eactly one length and one ASCII string", [stringToBytes "2-9"], True)
+
+
+challenge10 :: [B.ByteString] -> Either Error B.ByteString
+challenge10 [key, input]
+    | B.length key /= 16 = Left ("You need to supply an ASCII key exactly 16 bytes long (maybe try quoting it?)", [stringToBytes "2-10"], True)
+    | otherwise = Right $ plusNL $ decryptAES128CBC (B.replicate 16 (0::Word8)) key $ base64ToBytes input
+challenge10 [x] = Left ("You need to supply an ASCII key and base64 encoded data on standard in", [stringToBytes "2-10"], True)
+challenge10 _ = Left ("You need to supply an ASCII key and base64 encoded data on standard in", [stringToBytes "2-10"], True)

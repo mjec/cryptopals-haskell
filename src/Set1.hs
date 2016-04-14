@@ -150,13 +150,6 @@ challenge6 input
               shortestKeyLength = 2
               longestKeyLength = 40
 
--- Splits an input byte string into an array of byte strings, each of which is <= n bytes in length
-splitBytes :: Int -> B.ByteString -> [B.ByteString]
-splitBytes n bytes
-    | B.null bytes = []
-    | otherwise    = fst split : splitBytes n (snd split)
-        where split = B.splitAt (fromIntegral n) bytes
-
 -- Hamming distance between two byte strings, divided by the length of the shorter string
 -- (we use the shorter string because hammingDistance truncates the longer string)
 normalizedHammingDistance :: B.ByteString -> B.ByteString -> Double

@@ -19,16 +19,19 @@ module Lib
     , hammingDistance
     , bytesToString
     , buildFreqTable
---    , freqTableDifference
     , buildDelta
     , freqTableDelta
     , word8ToChar
     , charToWord8
     , stringToBytes
+    , splitBytes
     , plusNL
 
     -- Crypto functions
     , decryptAES128ECB
+    , encryptAES128ECB
+    , encryptAES128CBC
+    , decryptAES128CBC
     , pkcs7Pad
 
       -- Data
@@ -132,6 +135,13 @@ bytesToString = Txt.unpack . TxtEnc.decodeUtf8With (\_ _ -> Just '�')
 stringToBytes :: UTF8String -> B.ByteString
 stringToBytes = TxtEnc.encodeUtf8 . Txt.pack
 
+-- Splits an input byte string into an array of byte strings, each of which is <= n bytes in length
+splitBytes :: Int -> B.ByteString -> [B.ByteString]
+splitBytes n bytes
+    | B.null bytes = []
+    | otherwise    = fst split : splitBytes n (snd split)
+        where split = B.splitAt (fromIntegral n) bytes
+
 freqTableDelta :: Map.Map Word8 Double -> Map.Map Word8 Double -> Double
 freqTableDelta x y = sum [abs (snd (Map.elemAt i x) - snd (Map.elemAt i y)) | i <- [0..Map.size x - 1]]
 
@@ -139,14 +149,40 @@ plusNL :: B.ByteString -> B.ByteString
 plusNL x = B.append x $ B.singleton (charToWord8 '\n')
 
 -- Crypto functions
-decryptAES128ECB :: B.ByteString -> B.ByteString -> B.ByteString
-decryptAES128ECB k = AES.crypt AES.ECB (B.toStrict k) (B.toStrict $ B.replicate 16 (0::Word8)) AES.Decrypt
-
 pkcs7Pad :: Int -> B.ByteString -> B.ByteString
 pkcs7Pad len input
     | padlen > 0 = B.append input $ B.replicate padlen (fromIntegral padlen::Word8)
     | otherwise  = input
     where padlen = fromIntegral len - B.length input
+
+breakIntoBlocksPkcs7 :: Int -> B.ByteString -> [B.ByteString]
+breakIntoBlocksPkcs7 blocksize str = init split ++ [pkcs7Pad blocksize (last split)]
+    where split = splitBytes blocksize str
+
+decryptAES128ECB :: B.ByteString -> B.ByteString -> B.ByteString
+decryptAES128ECB k = AES.crypt AES.ECB (B.toStrict k) (B.toStrict $ B.replicate 16 (0::Word8)) AES.Decrypt
+
+encryptAES128ECB :: B.ByteString -> B.ByteString -> B.ByteString
+encryptAES128ECB k = AES.crypt AES.ECB (B.toStrict k) (B.toStrict $ B.replicate 16 (0::Word8)) AES.Encrypt
+
+encryptAES128CBC :: B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString
+encryptAES128CBC iv k input = foldl (\a b -> B.append a $ encryptAES128CBC' k (B.drop (B.length b - 16) b) a) iv blocks
+    where blocks = breakIntoBlocksPkcs7 16 input
+
+decryptAES128CBC :: B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString
+decryptAES128CBC iv k input = B.concat . snd $ recursiveDecrypt (iv:blocks, [])
+    where
+        recursiveDecrypt (c, p)
+            | length c < 2 = ([], p)
+            | otherwise    = recursiveDecrypt(init c, decryptAES128CBC' k (last $ init c) (last c):p)
+        blocks = splitBytes 16 input
+
+encryptAES128CBC' :: B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString
+encryptAES128CBC' k prev cur = encryptAES128ECB k (bitwiseCombine xor prev cur)
+
+decryptAES128CBC' :: B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString
+decryptAES128CBC' k prev cur = bitwiseCombine xor prev $ decryptAES128ECB k cur
+
 
 -- Data
 englishFreqTable :: Map.Map Word8 Double

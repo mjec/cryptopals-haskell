@@ -42,6 +42,8 @@ test-suite cryptopals-hs-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
+  other-modules:       Set1Data
+                     , Set2Data
   build-depends:       base
                      , cryptopals-hs
                      , test-framework

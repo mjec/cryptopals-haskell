@@ -11,9 +11,9 @@ returnHelp [] = Right $ stringToBytes $ unlines
     [ "Usage: cryptopals [-n] challenge [challenge arguments]"
     , "       cryptopals help [challenge]"
     , ""
+    , "-n            do not print trailing newline (otherwise printed at the end"
+    , "              of all challenge output)"
     , "challenge     the cryptopals challenge (e.g. 1-3 for set 1 challenge 3)"
-    , "    -n        do not print trailing newline (NB this *must* be supplied"
-    , "              before the challenge)"
     , "input data    input data for the relevant function (challenge-dependent)"
     , "help          show this help, or help for the specified challenge"
     ]
@@ -32,6 +32,7 @@ helpDispatch = [ (stringToBytes "1-1", s1c1Help)
                 , (stringToBytes "1-7", s1c7Help)
                 , (stringToBytes "1-8", s1c8Help)
                 , (stringToBytes "2-9", s1c8Help)
+                , (stringToBytes "2-10", s1c8Help)
                 ]
 
 s1c1Help :: [B.ByteString] -> Either Error B.ByteString
@@ -115,4 +116,12 @@ s2c9Help _ = Right $ stringToBytes $ unlines
         , ""
         , "Takes a length (positive integer) and an ASCII string. Retruns the"
         , "string padded to length bytes with PKCS#7 padding."
+        ]
+
+s2c10Help :: [B.ByteString] -> Either Error B.ByteString
+s2c10Help _ = Right $ stringToBytes $ unlines
+        [ "Usage: cryptopals 2-10 key < file"
+        , ""
+        , "Takes a 16 byte ASCII key (not hex!) and base64-encoded standard input."
+        , "Outputs the standard input decrypted with the key using AEC-CBC."
         ]
