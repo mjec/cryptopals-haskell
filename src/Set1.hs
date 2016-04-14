@@ -6,6 +6,7 @@ module Set1
     , challenge5
     , challenge6
     , challenge7
+    , challenge8
     ) where
 
 import           Help
@@ -187,10 +188,11 @@ challenge7 input
 
 
 -- Challenge 8
--- challenge7 :: [B.ByteString] -> Either Error B.ByteString
--- challenge7 input
---   | null input         = Left ("You need to supply a key and standard input", [stringToBytes "1-7"], True)
---   | 16 /= B.length key = Left ("Your key must be exactly 16 ASCII bytes (maybe enclose it in quotes?)", [stringToBytes "1-7"], True)
---   | otherwise          = Right $ decodeAES128ECB key str
---   where key = head input
---         str = base64ToBytes $ head $ tail input
+challenge8 :: [B.ByteString] -> Either Error B.ByteString
+challenge8 input
+  | null input         = Left ("You need to supply standard input", [stringToBytes "1-8"], True)
+  | otherwise          = Right $ plusNL . fst . minimumBy (compare `Data.Function.on` snd) $ filter (not . B.null . fst) [(i, allPairsHammingDistance $ splitBytes 16 (hexToBytes i)) | i <- B.split (charToWord8 '\n') $ head input]
+
+-- Takes a list of ByteStrings of the same length
+allPairsHammingDistance :: [B.ByteString] -> Int
+allPairsHammingDistance input = sum [sum [hammingDistance (head xs) x | x <- tail xs] | xs <- [drop n input | n <- [0..(length input - 1)]]]

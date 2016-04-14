@@ -28,6 +28,7 @@ helpDispatch = [ (stringToBytes "1-1", s1c1Help)
                 , (stringToBytes "1-5", s1c5Help)
                 , (stringToBytes "1-6", s1c6Help)
                 , (stringToBytes "1-7", s1c7Help)
+                , (stringToBytes "1-8", s1c8Help)
                 ]
 
 s1c1Help :: [B.ByteString] -> Either Error B.ByteString
@@ -95,4 +96,13 @@ s1c7Help _ = Right $ stringToBytes $ unlines
         , ""
         , "Takes a 16 byte ASCII key (not hex!) and base64-encoded standard input."
         , "Outputs the standard input decrypted with the key using AEC-ECB."
+        ]
+
+
+s1c8Help :: [B.ByteString] -> Either Error B.ByteString
+s1c8Help _ = Right $ stringToBytes $ unlines
+        [ "Usage: cryptopals 1-8 < file"
+        , ""
+        , "Takes hex-encoded standard input, one line of which has been encrypted"
+        , "using AES-128-ECB. Returns that line."
         ]

@@ -20,6 +20,7 @@ main = defaultMain
     , testCase "S1C6 hamming distance" test_S1C6_hamming
     , testCase "Set 1 Challenge 6" test_S1C6
     , testCase "Set 1 Challenge 7" test_S1C7
+    , testCase "Set 1 Challenge 8" test_S1C8
     ]
 
 test_S1C1 :: Assertion
@@ -66,3 +67,10 @@ test_S1C7 = assertEqual "Set 1 Challenge 7" output result
     where result = S1.challenge7 input
           input = S1D.challenge7Input
           output = S1D.challenge7Output
+
+
+test_S1C8 :: Assertion
+test_S1C8 = assertEqual "Set 1 Challenge 8" output result
+  where result = S1.challenge8 input
+        input = S1D.challenge8Input
+        output = S1D.challenge8Output
