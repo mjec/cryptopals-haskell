@@ -11,9 +11,6 @@ module Set1
 
 import           Lib
 
-import           System.IO
-
-
 import qualified Debug.Trace          as Debug
 
 import           Numeric              (showHex)
