@@ -98,11 +98,18 @@ s1c7Help _ = Right $ stringToBytes $ unlines
         , "Outputs the standard input decrypted with the key using AEC-ECB."
         ]
 
-
 s1c8Help :: [B.ByteString] -> Either Error B.ByteString
 s1c8Help _ = Right $ stringToBytes $ unlines
         [ "Usage: cryptopals 1-8 < file"
         , ""
         , "Takes hex-encoded standard input, one line of which has been encrypted"
         , "using AES-128-ECB. Returns that line."
+        ]
+
+s2c9Help :: [B.ByteString] -> Either Error B.ByteString
+s2c9Help _ = Right $ stringToBytes $ unlines
+        [ "Usage: cryptopals 2-9 length string"
+        , ""
+        , "Takes a length (positive integer) and an ASCII string. Retruns the"
+        , "string padded to length bytes with PKCS#7 padding."
         ]

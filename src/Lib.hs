@@ -29,6 +29,7 @@ module Lib
 
     -- Crypto functions
     , decryptAES128ECB
+    , pkcs7Pad
 
       -- Data
     , englishFreqTable
@@ -137,11 +138,15 @@ freqTableDelta x y = sum [abs (snd (Map.elemAt i x) - snd (Map.elemAt i y)) | i 
 plusNL :: B.ByteString -> B.ByteString
 plusNL x = B.append x $ B.singleton (charToWord8 '\n')
 
--- AES
+-- Crypto functions
 decryptAES128ECB :: B.ByteString -> B.ByteString -> B.ByteString
 decryptAES128ECB k = AES.crypt AES.ECB (B.toStrict k) (B.toStrict $ B.replicate 16 (0::Word8)) AES.Decrypt
 
-
+pkcs7Pad :: Int -> B.ByteString -> B.ByteString
+pkcs7Pad len input
+    | padlen > 0 = B.append input $ B.replicate padlen (fromIntegral padlen::Word8)
+    | otherwise  = input
+    where padlen = fromIntegral len - B.length input
 
 -- Data
 englishFreqTable :: Map.Map Word8 Double

@@ -6,8 +6,12 @@ import qualified Data.ByteString.Lazy           as B
 import           Data.Word                      (Word8)
 
 import qualified Lib
+
 import qualified Set1                           as S1
 import qualified Set1Data                       as S1D
+
+import qualified Set2                           as S2
+import qualified Set2Data                       as S2D
 
 
 main :: IO ()
@@ -21,6 +25,7 @@ main = defaultMain
     , testCase "Set 1 Challenge 6" test_S1C6
     , testCase "Set 1 Challenge 7" test_S1C7
     , testCase "Set 1 Challenge 8" test_S1C8
+    , testCase "Set 2 Challenge 9" test_S2C9
     ]
 
 test_S1C1 :: Assertion
@@ -74,3 +79,10 @@ test_S1C8 = assertEqual "Set 1 Challenge 8" output result
   where result = S1.challenge8 input
         input = S1D.challenge8Input
         output = S1D.challenge8Output
+
+
+test_S2C9 :: Assertion
+test_S2C9 = assertEqual "Set 2 Challenge 9" output result
+  where result = S2.challenge9 input
+        input = S2D.challenge9Input
+        output = S2D.challenge9Output

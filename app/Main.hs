@@ -7,6 +7,7 @@ import           Lib                  (Error, bytesToString, plusNL,
                                        stringToBytes)
 
 import qualified Set1                 as S1
+import qualified Set2                 as S2
 
 import qualified Data.ByteString      as BS
 import qualified Data.ByteString.Lazy as B
@@ -26,6 +27,8 @@ dispatch = [ (stringToBytes "help", returnHelp)
            , (stringToBytes "1-6", S1.challenge6)
            , (stringToBytes "1-7", S1.challenge7)
            , (stringToBytes "1-8", S1.challenge8)
+
+           , (stringToBytes "2-9", S2.challenge9)
            ]
 
 -- The function takes arguments and (lines getContents) and returns what should
