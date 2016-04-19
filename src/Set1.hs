@@ -181,7 +181,4 @@ challenge8 :: [B.ByteString] -> Either Error B.ByteString
 challenge8 input
   | null input         = Left ("You need to supply standard input", [stringToBytes "1-8"], True)
   | otherwise          = Right $ plusNL . fst . minimumBy (compare `Data.Function.on` snd) $ filter (not . B.null . fst) [(i, allPairsHammingDistance $ splitBytes 16 (hexToBytes i)) | i <- B.split (charToWord8 '\n') $ head input]
-
--- Takes a list of ByteStrings of the same length
-allPairsHammingDistance :: [B.ByteString] -> Int
-allPairsHammingDistance input = sum [sum [hammingDistance (head xs) x | x <- tail xs] | xs <- [drop n input | n <- [0..(length input - 1)]]]
+  -- | otherwise          = Right $ foldl B.append (stringToBytes "\n") $ map (\(a, b) -> B.append (stringToBytes $ show (fromIntegral b / 320) ++ " - ") $ B.append a (stringToBytes "\n")) $ sortOn snd $ filter (not . B.null . fst) [(i, allPairsHammingDistance $ splitBytes 16 (hexToBytes i)) | i <- B.split (charToWord8 '\n') $ head input]

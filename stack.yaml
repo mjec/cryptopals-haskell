@@ -3,6 +3,6 @@ extra-package-dbs: []
 packages:
 - '.'
 extra-deps:
-- AES-0.2.9
+- SimpleAES-0.4.2
 - text-1.2.2.1
 resolver: lts-5.10

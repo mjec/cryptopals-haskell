@@ -17,6 +17,7 @@ module Lib
       -- ByteString helper functions
     , bitwiseCombine
     , hammingDistance
+    , allPairsHammingDistance
     , bytesToString
     , buildFreqTable
     , buildDelta
@@ -33,6 +34,7 @@ module Lib
     , encryptAES128CBC
     , decryptAES128CBC
     , pkcs7Pad
+    , breakIntoBlocksPkcs7
 
       -- Data
     , englishFreqTable
@@ -50,8 +52,14 @@ import qualified Data.Map                    as Map
 import qualified Data.Text.Lazy              as Txt
 import qualified Data.Text.Lazy.Encoding     as TxtEnc
 import           Data.Word
+import qualified Debug.Trace                 as Debug
 
-import qualified Codec.Crypto.AES            as AES
+import qualified Test.QuickCheck             as QC
+
+-- import qualified Codec.Crypto.AES            as AES2
+--
+-- import qualified Crypto.Cipher.AES           as AES
+import qualified Codec.Crypto.SimpleAES      as AES
 
 -- Error
 -- (error message, arguments for return_help, and whether to show usage)
@@ -85,6 +93,10 @@ bitwiseCombine f x y = B.pack $ B.zipWith f x y
 -- NB: if the ByteStrings are not of euqal length, this truncates the longer one
 hammingDistance :: B.ByteString -> B.ByteString -> Int
 hammingDistance x y = B.foldl (\a b -> a + popCount b) 0 $ bitwiseCombine xor x y
+
+-- Takes a list of ByteStrings of the same length
+allPairsHammingDistance :: [B.ByteString] -> Int
+allPairsHammingDistance input = sum [sum [hammingDistance (head xs) x | x <- tail xs] | xs <- [drop n input | n <- [0..(length input - 1)]]]
 
 
 buildDelta :: Int -> Map.Map Word8 Double -> B.ByteString -> Double
@@ -160,10 +172,12 @@ breakIntoBlocksPkcs7 blocksize str = init split ++ [pkcs7Pad blocksize (last spl
     where split = splitBytes blocksize str
 
 decryptAES128ECB :: B.ByteString -> B.ByteString -> B.ByteString
+-- decryptAES128ECB k = AES.crypt AES.ECB (B.toStrict k) (B.toStrict $ B.replicate 16 (0::Word8)) AES.Decrypt
 decryptAES128ECB k = AES.crypt AES.ECB (B.toStrict k) (B.toStrict $ B.replicate 16 (0::Word8)) AES.Decrypt
 
 encryptAES128ECB :: B.ByteString -> B.ByteString -> B.ByteString
-encryptAES128ECB k = AES.crypt AES.ECB (B.toStrict k) (B.toStrict $ B.replicate 16 (0::Word8)) AES.Encrypt
+encryptAES128ECB k input = B.concat $ map (AES.crypt AES.ECB (B.toStrict k) (B.toStrict $ B.replicate 16 (0::Word8)) AES.Encrypt) blocks
+    where blocks = breakIntoBlocksPkcs7 16 input
 
 encryptAES128CBC :: B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString
 encryptAES128CBC iv k input = foldl (\a b -> B.append a $ encryptAES128CBC' k (B.drop (B.length b - 16) b) a) iv blocks

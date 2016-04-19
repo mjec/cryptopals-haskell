@@ -1,21 +1,25 @@
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
+import           Test.Framework.Providers.QuickCheck2 (testProperty)
 import           Test.HUnit
+import           Test.QuickCheck
 
-import qualified Data.ByteString.Lazy           as B
-import           Data.Word                      (Word8)
+import qualified Data.ByteString.Lazy                 as B
+import           Data.Word                            (Word8)
+
+import           Control.Monad
 
 import qualified Lib
 
-import qualified Set1                           as S1
-import qualified Set1Data                       as S1D
+import qualified Set1                                 as S1
+import qualified Set1Data                             as S1D
 
-import qualified Set2                           as S2
-import qualified Set2Data                       as S2D
+import qualified Set2                                 as S2
+import qualified Set2Data                             as S2D
 
 
 main :: IO ()
-main = defaultMain
+main = defaultMainWithArgs
     [ testCase "Set 1 Challenge 1" test_S1C1
     , testCase "Set 1 Challenge 2" test_S1C2
     , testCase "Set 1 Challenge 3" test_S1C3
@@ -27,7 +31,8 @@ main = defaultMain
     , testCase "Set 1 Challenge 8" test_S1C8
     , testCase "Set 2 Challenge 9" test_S2C9
     , testCase "Set 2 Challenge 10" test_S2C10
-    ]
+    , testProperty "Set 2 Challenge 11" test_S2C11
+    ] []
 
 test_S1C1 :: Assertion
 test_S1C1 = assertEqual "Set 1 Challenge 1" output result
@@ -93,3 +98,18 @@ test_S2C10 = assertEqual "Set 2 Challenge 10" output result
   where result = S2.challenge10 input
         input = S2D.challenge10Input
         output = S2D.challenge10Output
+
+test_S2C11 :: Property
+test_S2C11 = forAll (listOfWord8s 57) $ \rand ->
+                    case str rand
+                    of  "Guessed ECB\nActual  ECB\n" -> True
+                        "Guessed CBC\nActual  CBC\n" -> True
+                        _                            -> False
+  where str rand = case S2.challenge11 [B.pack rand]
+                of Left (x, _, _) -> "FAILED: " ++ x
+                   Right x -> Lib.bytesToString x
+
+
+-- Generators
+listOfWord8s :: Int -> Gen [Word8]
+listOfWord8s x = replicateM x arbitrary

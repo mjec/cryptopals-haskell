@@ -125,3 +125,13 @@ s2c10Help _ = Right $ stringToBytes $ unlines
         , "Takes a 16 byte ASCII key (not hex!) and base64-encoded standard input."
         , "Outputs the standard input decrypted with the key using AEC-CBC."
         ]
+
+s2c11Help :: [B.ByteString] -> Either Error B.ByteString
+s2c11Help _ = Right $ stringToBytes $ unlines
+        [ "Usage: cryptopals 2-11"
+        , ""
+        , "Randomly benerates a key. Encrypts chosen plaintext under AES128 with"
+        , "that key in either ECB or CBC mode."
+        , "Returns a guess as to whether the encryption mode was ECB or CBC and"
+        , "the actual mode used."
+        ]
