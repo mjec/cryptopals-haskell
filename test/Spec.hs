@@ -20,16 +20,16 @@ import qualified Set2Data                             as S2D
 
 main :: IO ()
 main = defaultMain
-    [ testCase "Set 1 Challenge 1" test_S1C1
-    , testCase "Set 1 Challenge 2" test_S1C2
-    , testCase "Set 1 Challenge 3" test_S1C3
-    , testCase "Set 1 Challenge 4" test_S1C4
-    , testCase "Set 1 Challenge 5" test_S1C5
-    , testCase "S1C6 hamming distance" test_S1C6_hamming
-    , testCase "Set 1 Challenge 6" test_S1C6
-    , testCase "Set 1 Challenge 7" test_S1C7
-    , testCase "Set 1 Challenge 8" test_S1C8
-    , testCase "Set 2 Challenge 9" test_S2C9
+    [ testCase "Set 1 Challenge  1" test_S1C1
+    , testCase "Set 1 Challenge  2" test_S1C2
+    , testCase "Set 1 Challenge  3" test_S1C3
+    , testCase "Set 1 Challenge  4" test_S1C4
+    , testCase "Set 1 Challenge  5" test_S1C5
+    , testCase "Set 1 Challenge  6 - hamming distance verification" test_S1C6_hamming
+    , testCase "Set 1 Challenge  6 - actual challenge" test_S1C6
+    , testCase "Set 1 Challenge  7" test_S1C7
+    , testCase "Set 1 Challenge  8" test_S1C8
+    , testCase "Set 2 Challenge  9" test_S2C9
     , testCase "Set 2 Challenge 10" test_S2C10
     , testProperty "Set 2 Challenge 11" test_S2C11
     , testCase "Set 2 Challenge 12 - fixed string" test_S2C12_fixed
@@ -119,11 +119,15 @@ test_S2C12_fixed = assertEqual "Set 2 Challenge 12" output result
 
 
 test_S2C12_random :: Property
-test_S2C12_random = forAll (listOfWord8s 256) $ \rand ->
-                       case S2.challenge12 [B.pack $ take 16 rand, plaintext rand]
-                         of Right x -> x == Lib.base64ToBytes (plaintext rand)
+test_S2C12_random = forAll (listOfWord8s 66) $ \rand ->
+                       case S2.challenge12 [B.pack $ take 16 rand, Lib.bytesToBase64 $ plaintext rand]
+                         of Right x -> x == expectedOutput rand
                             _       -> False
-  where plaintext rand = Lib.bytesToBase64 . B.pack $ drop 16 rand
+  where plaintext rand = B.pack $ drop 16 rand
+        expectedOutput rand = Lib.pkcs7Pad (paddedLength $ B.length (plaintext rand)) (plaintext rand)
+        paddedLength len
+            | len `mod` 16 == 0 = fromIntegral len
+            | otherwise = 16 * ((fromIntegral len `div` 16) + 1)
 
 
 -- Generators
