@@ -19,7 +19,7 @@ import qualified Set2Data                             as S2D
 
 
 main :: IO ()
-main = defaultMainWithArgs
+main = defaultMain
     [ testCase "Set 1 Challenge 1" test_S1C1
     , testCase "Set 1 Challenge 2" test_S1C2
     , testCase "Set 1 Challenge 3" test_S1C3
@@ -32,7 +32,9 @@ main = defaultMainWithArgs
     , testCase "Set 2 Challenge 9" test_S2C9
     , testCase "Set 2 Challenge 10" test_S2C10
     , testProperty "Set 2 Challenge 11" test_S2C11
-    ] []
+    , testCase "Set 2 Challenge 12 - fixed string" test_S2C12_fixed
+    , testProperty "Set 2 Challenge 12 - random data" test_S2C12_random
+    ]
 
 test_S1C1 :: Assertion
 test_S1C1 = assertEqual "Set 1 Challenge 1" output result
@@ -107,9 +109,23 @@ test_S2C11 = forAll (listOfWord8s 57) $ \rand ->
                         _                            -> False
   where str rand = case S2.challenge11 [B.pack rand]
                 of Left (x, _, _) -> "FAILED: " ++ x
-                   Right x -> Lib.bytesToString x
+                   Right x        -> Lib.bytesToString x
+
+test_S2C12_fixed :: Assertion
+test_S2C12_fixed = assertEqual "Set 2 Challenge 12" output result
+ where result = S2.challenge12 input
+       input = S2D.challenge12Input
+       output = S2D.challenge12Output
+
+
+test_S2C12_random :: Property
+test_S2C12_random = forAll (listOfWord8s 256) $ \rand ->
+                       case S2.challenge12 [B.pack $ take 16 rand, plaintext rand]
+                         of Right x -> x == Lib.base64ToBytes (plaintext rand)
+                            _       -> False
+  where plaintext rand = Lib.bytesToBase64 . B.pack $ drop 16 rand
 
 
 -- Generators
 listOfWord8s :: Int -> Gen [Word8]
-listOfWord8s x = replicateM x arbitrary
+listOfWord8s n = replicateM n arbitrary

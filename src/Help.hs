@@ -130,8 +130,18 @@ s2c11Help :: [B.ByteString] -> Either Error B.ByteString
 s2c11Help _ = Right $ stringToBytes $ unlines
         [ "Usage: cryptopals 2-11"
         , ""
-        , "Randomly benerates a key. Encrypts chosen plaintext under AES128 with"
+        , "Randomly generates a key. Encrypts chosen plaintext under AES128 with"
         , "that key in either ECB or CBC mode."
         , "Returns a guess as to whether the encryption mode was ECB or CBC and"
         , "the actual mode used."
+        ]
+
+s2c12Help :: [B.ByteString] -> Either Error B.ByteString
+s2c12Help _ = Right $ stringToBytes $ unlines
+        [ "Usage: cryptopals 2-12 < file"
+        , ""
+        , "Randomly generates a key and takes base64 encoded standard input."
+        , "Encrypts standard input under AES128 using the random key in ECB mode."
+        , "Returns the decrypted standard input using an oracle byte shifting"
+        , "attack."
         ]

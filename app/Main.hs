@@ -34,6 +34,7 @@ dispatch = [ (stringToBytes "help", returnHelp)
            , (stringToBytes "2-9", S2.challenge9)
            , (stringToBytes "2-10", S2.challenge10)
            , (stringToBytes "2-11", S2.challenge11)
+           , (stringToBytes "2-12", S2.challenge12)
            ]
 
 -- The function takes arguments and (lines getContents) and returns what should
@@ -45,12 +46,14 @@ needsStdin = [ (stringToBytes "1-4", \_ stdin -> stdin)
              , (stringToBytes "1-7", \args stdin -> if null args then [] else head args : stdin)
              , (stringToBytes "1-8", \_ stdin -> stdin)
              , (stringToBytes "2-10", \args stdin -> if null args then [] else head args : stdin)
+             , (stringToBytes "2-12", \_ stdin -> stdin)
              ]
 
 -- The function takes arguments and an infinite list of random Word8s, and returns what should
 -- be passed to the dispatch function. This is run AFTER needsStdin.
 needsRandom :: [(B.ByteString, [B.ByteString] -> [Word8] -> [B.ByteString])]
 needsRandom = [ (stringToBytes "2-11" , \args rand -> B.pack (take 57 rand) : args)
+              , (stringToBytes "2-12" , \args rand -> B.pack (take 16 rand) : args)
               ]
 
 parseArgs :: Bool -> B.ByteString -> [B.ByteString] -> IO ()
